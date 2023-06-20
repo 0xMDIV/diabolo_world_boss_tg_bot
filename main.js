@@ -15,10 +15,8 @@ function fetchData() {
 
 function getSpawnTime(minutes) {
     const currentTime = new Date();
-    // Zeitpunkt mit den zusätzlichen Minuten berechnen
+    // Calc Time with extra Minutes
     const futureTime = new Date(currentTime.getTime() + minutes * 60000);
-
-    // Ergebnis formatieren
     const spawnTime = futureTime.toLocaleTimeString();
 
     return {'current': currentTime.toLocaleTimeString(), 'spawn': spawnTime};
@@ -30,7 +28,6 @@ function processBossData(data) {
     diaboloBossData.time = data.time;
     diaboloBossData.currentTime = spawnData.current;
     diaboloBossData.spawnTime = spawnData.spawn
-    // console.log(diaboloBossData);
 }
 
 function checkBossSpawn() {
@@ -43,21 +40,12 @@ if (config.bot.token === undefined) {
 }
 const bot = new telegram.Telegraf(config.bot.token);
 
-function sendInfoAuto(bot) {
-    bot.telegram.sendMessage(config.bot.chat_id, `Boss Name: ${diaboloBossData.name}\nCurrent Time: ${diaboloBossData.currentTime}\nEstimated Time of Arrival: ${diaboloBossData.spawnTime}`);
-}
-
-function sendInfo(ctx) {
-    let chat_id = ctx.chat.id;
-    ctx.telegram.sendMessage(chat_id,`Boss Name: ${diaboloBossData.name}\nCurrent Time: ${diaboloBossData.currentTime}\nEstimated Time of Arrival: ${diaboloBossData.spawnTime}`);
-}
-
 // refresh every 2 hours
 cron.schedule(
-    `0 2 * * *`,
+    `0 1 * * *`,
     function () {
         checkBossSpawn();
-        if(diaboloBossData.spawnTime < 60) {
+        if(diaboloBossData.spawnTime <= 60) {
             sendInfoAuto(bot);
         }
     },
@@ -66,10 +54,22 @@ cron.schedule(
     }
 );
 
+function sendInfoAuto(bot) {
+    bot.telegram.sendMessage(config.bot.chat_id, `Boss Name: ${diaboloBossData.name}\nCurrent Time: ${diaboloBossData.currentTime}\nEstimated Time of Arrival: ${diaboloBossData.spawnTime}`);
+}
+
+function sendInfo(ctx) {
+    checkBossSpawn();
+    let chat_id = ctx.chat.id;
+    ctx.telegram.sendMessage(chat_id,`Boss Name: ${diaboloBossData.name}\nCurrent Time: ${diaboloBossData.currentTime}\nEstimated Time of Arrival: ${diaboloBossData.spawnTime}`);
+}
+
 bot.launch().then(checkBossSpawn());
 console.log("Bot started");
 
 bot.command("boss", (ctx) => sendInfo(ctx));
+bot.command("info", (ctx) => ctx.reply(`Our ChatId: ${ctx.chat.id}`));
+bot.command("source", (ctx) => ctx.reply(`Current Source Code: https://github.com/0xMDIV/diabolo_world_boss_tg_bot/tree/main`));
 
 
 // Enable graceful stop
